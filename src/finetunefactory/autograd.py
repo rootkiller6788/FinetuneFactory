@@ -549,14 +549,15 @@ def scale(a: Any, s: float) -> Tensor:
 
 def silu(a: Any) -> Tensor:
     ta = _as_tensor(a)
+    exp = math.exp
 
     def f(v: float) -> float:
-        return v / (1.0 + math.exp(-v)) if v > -30 else 0.0
+        return v / (1.0 + exp(-v)) if v > -30 else 0.0
 
     def df(v: float) -> float:
         if v < -30:
             return 0.0
-        s = 1.0 / (1.0 + math.exp(-v))
+        s = 1.0 / (1.0 + exp(-v))
         return s * (1.0 + v * (1.0 - s))
 
     out = [[f(v) for v in row] for row in ta.data] if _is2d(ta.data) else [f(v) for v in ta.data]
@@ -677,9 +678,10 @@ def softmax_rows(x: Any) -> Tensor:
     if not _is2d(tx.data):
         raise ValueError("softmax_rows 只支持 2D 输入")
     out: list[list[float]] = []
+    exp = math.exp
     for row in tx.data:
         m = max(row)
-        ex = [math.exp(v - m) for v in row]
+        ex = [exp(v - m) for v in row]
         s = sum(ex)
         out.append([v / s for v in ex])
     _count("softmax", tx.numel)
@@ -718,17 +720,18 @@ def _ce_parts(
         raise ValueError(f"mask 长度 {len(mask)} != logits 行数 {T}")
     probs: list[list[float]] = []
     acc = 0.0
+    exp, log = math.exp, math.log
     for row, tgt, mi in zip(logits_data, targets, mask):
         if tgt < 0:
             probs.append([0.0] * len(row))
             continue
         m = max(row)
-        ex = [math.exp(v - m) for v in row]
+        ex = [exp(v - m) for v in row]
         s = sum(ex)
         p = [v / s for v in ex]
         probs.append(p)
         if mi != 0.0:
-            acc += mi * -math.log(max(p[tgt], 1e-30))
+            acc += mi * -log(max(p[tgt], 1e-30))
     denom = sum(mask)
     if denom <= 0:
         raise ValueError("mask 全为 0：这条样本没有任何监督信号，不该进 batch")
@@ -965,11 +968,12 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
     theta = _rope_theta(hd, base)
     # 一次算好 (cos, sin) 表 —— 它是位置的纯函数，与 x 无关
     table: list[list[tuple[float, float]]] = []
+    cos, sin = math.cos, math.sin
     for p in positions:
         row: list[tuple[float, float]] = []
         for j in range(half):
             ang = float(p) * theta[j]
-            row.append((math.cos(ang), math.sin(ang)))
+            row.append((cos(ang), sin(ang)))
         table.append(row)
 
     out: list[list[float]] = []
