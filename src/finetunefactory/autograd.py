@@ -811,10 +811,14 @@ def batch_cross_entropy(
         raise ValueError("batch_cross_entropy 收到空的 batch")
     tensors = [_as_tensor(p[0]) for p in pairs]
     parts: list[tuple[list[list[float]], float, float]] = []
+    masks: list[Sequence[float]] = []
     total_rows = 0
     for tl, (_, targets, mask) in zip(tensors, pairs):
         if not _is2d(tl.data):
             raise ValueError("batch_cross_entropy 的 logits 必须是 2D")
+        if mask is None:
+            mask = [1.0 if tg >= 0 else 0.0 for tg in targets]
+        masks.append(mask)
         parts.append(_ce_parts(tl.data, targets, mask))
         total_rows += len(tl.data)
     n = len(parts)
@@ -826,9 +830,7 @@ def batch_cross_entropy(
         if t.grad is None:
             return
         g = weight * t.grad[0] / n
-        for tl, (_, targets, mask), (probs, _loss, denom) in zip(tensors, pairs, parts):
-            if mask is None:
-                mask = [1.0 if tg >= 0 else 0.0 for tg in targets]
+        for tl, (_, targets, _), (probs, _loss, denom), mask in zip(tensors, pairs, parts, masks):
             scale_i = g / denom
             gx: list[list[float]] = []
             for i, (p, tgt) in enumerate(zip(probs, targets)):
