@@ -208,10 +208,10 @@ def init_base_weights(spec: ModelSpec, seed: int) -> dict[str, list[Any]]:
     out: dict[str, list[Any]] = {}
     for name, shape in param_shapes(spec).items():
         rng = random.Random(derive_seed("init", name, spec.name, int(seed)))
-        if _std_for(name, shape) == 0.0:
+        std = _std_for(name, shape)
+        if std == 0.0:
             out[name] = [1.0] * shape[0]
             continue
-        std = _std_for(name, shape)
         if len(shape) == 1:
             out[name] = [rng.gauss(0.0, std) for _ in range(shape[0])]
         else:
