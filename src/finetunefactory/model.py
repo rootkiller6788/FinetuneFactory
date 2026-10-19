@@ -375,9 +375,9 @@ def flatten_by_name(weights: Mapping[str, Any], names: Sequence[str]) -> list[fl
         value = weights[name]
         if value and isinstance(value[0], list):
             for row in value:
-                flat.extend(float(v) for v in row)
+                flat.extend(map(float, row))
         else:
-            flat.extend(float(v) for v in value)
+            flat.extend(map(float, value))
     return flat
 
 
