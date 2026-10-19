@@ -1,0 +1,132 @@
+{
+  "_comment": "默认配置。扇出网格用**显式 cells** 而不是叉积：叉积 = (full|freeze|3 个 rank × 3 个挂载点|lora-q4|lora-q8) × 4 能力 × 2 目标 = 数百个 spec，而报告真正需要的四条对照只要 8 cells × 4 × 2 = **64 个**。实测一趟 64 个 spec 用 725.7 s（约 12 分钟，其中约九成花在逐规格的梯度数值差分上，不是训练）。每个 cell 的选取理由见下面各条 notes。",
+  "sweep": {
+    "capabilities": [
+      "upper",
+      "shift",
+      "reverse",
+      "sort"
+    ],
+    "objectives": [
+      "sft",
+      "sft_response_only"
+    ],
+    "ranks": [
+      4,
+      8,
+      32
+    ],
+    "target_sets": {
+      "qv": [
+        "q_proj",
+        "v_proj"
+      ],
+      "qkvo": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj"
+      ],
+      "all7": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "cells": [
+      {
+        "kind": "full",
+        "note": "全参微调：gain 的上界，也是显存的对照基线"
+      },
+      {
+        "kind": "freeze",
+        "note": "冻结第 0 层（n_layers=2 时 freeze_layers 只能取 1）：只训一半的层"
+      },
+      {
+        "kind": "lora",
+        "rank": 8,
+        "targets": "qv",
+        "note": "LoRA 默认档。它与 qlora-q4 那一格逐字同构，唯一差别是基座没被量化"
+      },
+      {
+        "kind": "lora",
+        "rank": 32,
+        "targets": "qv",
+        "note": "rank 轴：r=32 是 r=8 的四倍参数，用来看「加 rank 还换不换得来 gain」"
+      },
+      {
+        "kind": "lora",
+        "rank": 8,
+        "targets": "all7",
+        "note": "挂载点轴：7 个投影全挂，适配器 4352 参数 —— 实测它的显存**超过** full，这一格是「LoRA 省显存」这个说法的反例"
+      },
+      {
+        "kind": "qlora",
+        "rank": 8,
+        "targets": "qv",
+        "bits": 4,
+        "note": "与 lora-r8-qv 唯一差别是基座 4-bit；也是量化误差单调性的低位端"
+      },
+      {
+        "kind": "qlora",
+        "rank": 8,
+        "targets": "qv",
+        "bits": 8,
+        "note": "同上的 8-bit。这一格存在的唯一理由是和 4-bit 组成一对，让量化误差可比"
+      },
+      {
+        "kind": "qlora",
+        "rank": 8,
+        "targets": "all7",
+        "bits": 4,
+        "note": "4-bit × 全挂载：最省基座 + 最多适配器，显存账里两项反向拉扯的最极端一格"
+      }
+    ],
+    "_comment": "alpha_mult=2.0：alpha = 2×rank。这个倍数进配置而不是写死在 pipeline 里，否则改 rank 会同时改有效学习率，rank 那一列就不是单变量了。",
+    "alpha_mult": 2.0,
+    "seed": 0
+  },
+  "train": {
+    "steps": 48,
+    "batch": 8,
+    "grad_accum": 1,
+    "lr": 0.03,
+    "warmup_steps": 8,
+    "seq_len": 16,
+    "template": "plain",
+    "n_train": 160,
+    "n_eval": 24,
+    "eval_every": 24,
+    "checkpoint_every": 24,
+    "optimizer": "adamw",
+    "weight_decay": 0.0,
+    "scheduler": "cosine",
+    "seed": 0,
+    "max_grad_norm": 1.0,
+    "_comment": "lr=3e-2 是**按 full 标定的**，这一点必须说清楚：它同时是 full 的最优点、和另外三种策略的最差点附近。重测（upper/sft，n_eval=24 → 单点粒度 1/24，只读趋势）：acc = full .271/.396/.125/.073、freeze .104/.229/.302/.115、lora .156/.125/.198/.146、qlora .167/.177/.208/.125（对应 lr=.01/.03/.1/.3）。**四个策略没有一个单调**：full 峰在 .03，freeze/lora/qlora 三个峰都在 .1，终损失给出同样的排序（full 在 .03 最低 1.283；其余三个在 .1 最低 1.707/2.389/2.415）。所以**「四策略共用一个 lr 是公平的」不成立** —— lora 在 .1 能拿 .198，而在这里的 .03 只有 .125（恰好等于乱猜）。⚠️ 因此报告里 lora_reaches_full_gain_on_target 被推翻（中位比 0.451）是在一个**对 full 最有利**的步长下测的，这是那条裁决的边界条件，不是它的反例。另：本注释此前的旧数字（full 0.604→0.531→0.104→0.052，以及「四策略一起单调变差」）是在梯度引擎含两处静默 bug 时测的，已全部作废（见 README 附录 B.7 / 坑 100、101、108）。"
+  },
+  "cost": {
+    "_comment": "overhead_bytes 在这里被显式设成 0。库默认是 1MB（『CUDA context / 碎片』），但在这个参数量只有 5648 的模型上，1MB 是参数状态的十几倍，会把四种策略的显存差异整块盖住 —— 表里每一行看起来都差不多，而被测的那个差异就消失了。显存表本身会把分解逐列打出来，想加回固定开销只需改这一个数。",
+    "activation_factor": 8.0,
+    "overhead_bytes": 0
+  },
+  "acceptance": {
+    "min_specs": 40,
+    "merge_tolerance": 1e-05,
+    "lora_gain_ratio": 0.9,
+    "require_ir_roundtrip": true,
+    "require_single_call_path": true,
+    "require_merge_is_exact": true,
+    "require_cost_three_way_agree": true,
+    "quant_error_decreasing": true
+  },
+  "report": {
+    "headline_specs": 6,
+    "max_matrix_rows": 64,
+    "pareto_max_points": 12
+  }
+}

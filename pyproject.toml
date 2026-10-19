@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finetunefactory"
+version = "0.1.0"
+description = "FineTuneFactory —— 训练策略是数据，不是代码分支（零第三方依赖）"
+# 核心链路只用标准库。requires-python 下限由 `math.sumprod` 决定（CPython 3.12+），
+# 它是本项目的性能底线：微型 transformer 的前向/反向是绝对热点，手写三重循环
+# 会让整条 60 格网格从 1 分钟变成 20 分钟。
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+# 重型接入点一律写成抛 NotImplementedError 的扩展点，不放进核心链路。
+torch = ["torch>=2.2"]
+peft = ["peft>=0.11"]
+bitsandbytes = ["bitsandbytes>=0.43"]
+plot = ["matplotlib>=3.8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

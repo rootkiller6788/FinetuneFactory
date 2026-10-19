@@ -1,0 +1,14 @@
+{
+  "_comment": "微调数据索引。这里是「有哪些能力」的**唯一**声明处 —— 能力名必须在 data.py 的 TASK_FNS 里有实现，索引只能选，不能发明。chars 的顺序即 token id 顺序，所以改它是改词表（会让已有产物全部失效）。payload 从 payload_chars 里抽，长度固定 4。",
+  "version": 1,
+  "specials": ["<pad>", "<bos>", "<eos>", ":", "=", "<u>", "<a>"],
+  "chars": "abcdefghiABCDEFGH1234",
+  "payload_chars": "abcdefgh",
+  "payload_len": 4,
+  "tasks": {
+    "1": "upper",
+    "2": "shift",
+    "3": "reverse",
+    "4": "sort"
+  }
+}

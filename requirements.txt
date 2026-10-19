@@ -1,0 +1,13 @@
+# 核心链路零第三方依赖 —— 一个 pip 包都不需要。
+#
+# 这个项目**训练的是自己构造的微型 transformer**：参数几万个、语料几千条、
+# 一步几毫秒。所以「真实训练」这件事在这里是可复现的，而标准库足够跑完它。
+#
+# 为什么不用 PyTorch：本项目的核心命题是「训练策略是数据，不是代码分支」——
+# 要证明它，就必须能逐行指出「同一个 Train Engine，只因为 RuntimeConfig 里
+# 可训练参数集不同，就长出了 full / freeze / LoRA / QLoRA 四种行为」。
+# 用框架会把这条链路埋进几十层调用里，而这里它是一张参数计划表。
+# 生产当然该用 PyTorch，故 pyproject.toml 里留了 torch / peft / bitsandbytes 扩展点。
+#
+# 开发期需要 pytest（仅测试用，不进核心链路）：
+#   python -m pip install pytest
