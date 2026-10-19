@@ -263,7 +263,7 @@ def forward(weights: Mapping[str, Any], ids: Sequence[int], spec: ModelSpec) -> 
     nh, hd = spec.n_heads, spec.head_dim
     head_sizes = [hd] * nh
     mask = causal_mask(T)
-    positions = list(range(T))
+    positions = range(T)
     attn_scale = 1.0 / math.sqrt(hd)
 
     for i in range(spec.n_layers):
