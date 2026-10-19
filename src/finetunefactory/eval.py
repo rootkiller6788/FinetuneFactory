@@ -55,13 +55,8 @@ def token_accuracy(
         if tgt < 0:
             continue
         row = logits[t]
-        # argmax 平局取小的 id —— 与 data._argmax 的约定一致。
-        best = 0
-        best_v = row[0]
-        for i in range(1, len(row)):
-            if row[i] > best_v:
-                best_v = row[i]
-                best = i
+        # argmax 平局取小的 id（index 返回首个命中）—— 与 data._argmax 的约定一致。
+        best = row.index(max(row))
         if best == tgt:
             ok += 1
     return ok, len(positions)
