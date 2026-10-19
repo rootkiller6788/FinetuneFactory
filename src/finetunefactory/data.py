@@ -112,7 +112,7 @@ class Vocab:
 
     @property
     def tokens(self) -> tuple[str, ...]:
-        return self.specials + tuple(self.chars)
+        return self._tokens
 
     @property
     def size(self) -> int:
@@ -128,13 +128,15 @@ class Vocab:
         return tok in self._stoi
 
     def __post_init__(self) -> None:
-        toks = self.tokens
+        toks = self.specials + tuple(self.chars)
+        object.__setattr__(self, "_tokens", toks)
         dupes = sorted({t for t in toks if toks.count(t) > 1})
         if dupes:
             raise ValueError(f"词表里有重复 token（会静默改变 id 分配）：{dupes}")
         object.__setattr__(self, "_stoi", {t: i for i, t in enumerate(toks)})
 
     # dataclass(frozen=True) 上挂缓存字段：用 object.__setattr__ 在 __post_init__ 里放。
+    _tokens: tuple[str, ...] = field(default_factory=tuple, repr=False, compare=False)
     _stoi: Mapping[str, int] = field(default_factory=dict, repr=False, compare=False)
 
     @property
