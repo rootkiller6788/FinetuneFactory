@@ -421,7 +421,7 @@ def concat_cols(parts: Sequence[Any]) -> Tensor:
     ts = tuple(_as_tensor(p) for p in parts)
     rows = len(ts[0].data)
     sizes = [len(t.data[0]) for t in ts]
-    out = [sum((t.data[i] for t in ts), []) for i in range(rows)]
+    out = [[v for t in ts for v in t.data[i]] for i in range(rows)]
     t = Tensor(out, prev=ts)
 
     def _bw() -> None:
