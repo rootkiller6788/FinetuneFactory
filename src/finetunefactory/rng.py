@@ -82,7 +82,7 @@ def stable_hash64(*parts: Any) -> int:
     成分先过 `str()`：调用点很自然会传 `(spec_id, step)` 这种混合类型，
     而 `"\\x1f".join` 遇到 int 会抛 `TypeError` —— 报错的位置离真正的原因很远。
     """
-    return int(sha256_text(_SEP.join(str(p) for p in parts))[:16], 16)
+    return int(sha256_text(_SEP.join(map(str, parts)))[:16], 16)
 
 
 def short_digest(full: str, length: int = 12) -> str:
