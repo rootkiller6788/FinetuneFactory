@@ -383,19 +383,22 @@ def train(
 
     n_accum = settings.grad_accum
     weight = 1.0 / n_accum
+    batch_size = settings.batch
+    model_spec = spec.model
+    objective = spec.objective
     for step in range(settings.steps):
         indices = order[step]
         optimizer.zero_grad()
         micro_losses: list[float] = []
         for mi in range(n_accum):
-            start = mi * settings.batch
-            chunk = indices[start : start + settings.batch]
+            start = mi * batch_size
+            chunk = indices[start : start + batch_size]
             if not chunk:
                 # 最后一步凑不满累积组：跳过微批但不改变 weight。
                 # 用「补齐」而不是「改 weight」——改 weight 会让这一步的学习率
                 # 与别步不同，而它表现为「最后一步之后指标抖一下」。
                 continue
-            ids, targets, masks = batch_of(examples, chunk, spec.objective)
+            ids, targets, masks = batch_of(examples, chunk, objective)
             weights = plan.build()
             if step == 0 and mi == 0:
                 # 只量第一个微批：它包含 build() + 前向的全部算子，
@@ -403,14 +406,14 @@ def train(
                 # 量全部会让计数器把同一段代码数 n_accum 遍）。
                 with mac_counter() as mc:
                     pairs = [
-                        (forward(weights, x, spec.model), tg, mk)
+                        (forward(weights, x, model_spec), tg, mk)
                         for x, tg, mk in zip(ids, targets, masks)
                     ]
                     loss = batch_cross_entropy(pairs, weight=weight)
                 macs = mc.to_dict()
             else:
                 pairs = [
-                    (forward(weights, x, spec.model), tg, mk) for x, tg, mk in zip(ids, targets, masks)
+                    (forward(weights, x, model_spec), tg, mk) for x, tg, mk in zip(ids, targets, masks)
                 ]
                 loss = batch_cross_entropy(pairs, weight=weight)
             micro_losses.append(_as_float(loss.data) / weight)
