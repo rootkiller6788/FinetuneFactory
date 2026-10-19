@@ -292,17 +292,15 @@ def clip_grad_norm_(leaves: Sequence[tuple[str, Tensor]], max_norm: float) -> fl
     if max_norm <= 0:
         return 0.0
     total = 0.0
+    sumprod = math.sumprod
     for _name, leaf in leaves:
         g = leaf.grad
         if g is None:
             continue
         if g and isinstance(g[0], list):
-            for row in g:
-                for v in row:
-                    total += v * v
+            total += sum(sumprod(row, row) for row in g)
         else:
-            for v in g:
-                total += v * v
+            total += sumprod(g, g)
     norm = math.sqrt(total)
     if norm <= max_norm or norm == 0.0:
         return norm
