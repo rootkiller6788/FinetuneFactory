@@ -222,7 +222,7 @@ def init_base_weights(spec: ModelSpec, seed: int) -> dict[str, list[Any]]:
 # ----------------------------------------------------------------------
 # 因果掩码
 # ----------------------------------------------------------------------
-_MASKS: dict[int, list[list[float]]] = {}
+_MASKS: dict[int, Tensor] = {}
 
 #: 掩码用的负无穷替身。取 `-1e9` 而不是 `float("-inf")`：
 #: `-inf` 进 softmax 会得到 `nan - nan`（`-inf - (-inf)`），而 `nan` 会
@@ -235,9 +235,12 @@ def causal_mask(T: int) -> Tensor:
     """上三角为 `MASK_NEG` 的常量。**冻结** —— 否则 `add` 的反向会给它分配梯度。"""
     m = _MASKS.get(T)
     if m is None:
-        m = [[0.0 if j <= i else MASK_NEG for j in range(T)] for i in range(T)]
+        m = constant(
+            [[0.0 if j <= i else MASK_NEG for j in range(T)] for i in range(T)],
+            name=f"causal_mask[{T}]",
+        ).freeze()
         _MASKS[T] = m
-    return constant(m, name=f"causal_mask[{T}]").freeze()
+    return m
 
 
 # ----------------------------------------------------------------------
