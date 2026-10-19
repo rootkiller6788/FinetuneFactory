@@ -917,6 +917,18 @@ def mean_rows(x: Any) -> Tensor:
 #: （它不进指纹），但它必须是一个**具名常量**而不是散落在算式里的 10000.0。
 ROPE_BASE = 10000.0
 
+#: 角频率表只依赖 ``(head_dim, base)``，而它对同一份 Spec 的每次前向都不变。
+_ROPE_THETA: dict[tuple[int, float], list[float]] = {}
+
+
+def _rope_theta(hd: int, base: float) -> list[float]:
+    key = (hd, float(base))
+    theta = _ROPE_THETA.get(key)
+    if theta is None:
+        theta = [base ** (-2.0 * j / hd) for j in range(hd // 2)]
+        _ROPE_THETA[key] = theta
+    return theta
+
 
 def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor:
     """把每个头内的通道两两配对做旋转。
@@ -947,8 +959,8 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
         raise ValueError(f"rope 的 positions 长度 {len(positions)} != 行数 {T}")
 
     half = hd // 2
-    # 每个通道对的角频率：θ_j = base^(-2j/hd)
-    theta = [base ** (-2.0 * j / hd) for j in range(half)]
+    # 每个通道对的角频率：θ_j = base^(-2j/hd)。按 (hd, base) 缓存。
+    theta = _rope_theta(hd, base)
     # 一次算好 (cos, sin) 表 —— 它是位置的纯函数，与 x 无关
     table: list[list[tuple[float, float]]] = []
     for p in positions:
