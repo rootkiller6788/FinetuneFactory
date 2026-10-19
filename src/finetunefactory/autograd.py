@@ -753,9 +753,9 @@ def softmax_cross_entropy(logits: Any, targets: Sequence[int], mask: Sequence[fl
     tl = _as_tensor(logits)
     if not _is2d(tl.data):
         raise ValueError("softmax_cross_entropy 只支持 2D logits")
-    probs, loss, denom = _ce_parts(tl.data, targets, mask)
     if mask is None:
         mask = [1.0 if t >= 0 else 0.0 for t in targets]
+    probs, loss, denom = _ce_parts(tl.data, targets, mask)
     _count("ce", sum(len(row) for row in tl.data))
     t = Tensor(loss, prev=(tl,))
 
