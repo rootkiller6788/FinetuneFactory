@@ -381,12 +381,12 @@ def train(
     macs: dict[str, Any] = {}
     t0 = time.perf_counter()
 
+    n_accum = settings.grad_accum
+    weight = 1.0 / n_accum
     for step in range(settings.steps):
         indices = order[step]
         optimizer.zero_grad()
         micro_losses: list[float] = []
-        n_accum = settings.grad_accum
-        weight = 1.0 / n_accum
         for mi in range(n_accum):
             start = mi * settings.batch
             chunk = indices[start : start + settings.batch]
