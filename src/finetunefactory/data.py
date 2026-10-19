@@ -166,16 +166,21 @@ class DataIndex:
     payload_len: int
     tasks: Mapping[str, str]  # task_id token -> capability name
     source: str = ""
+    #: capability → task_id 的反向索引，构造期建一次（`task_id_of` 在每条样本上都会调）。
+    _task_ids: Mapping[str, str] = field(default_factory=dict, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_task_ids", {name: tok for tok, name in self.tasks.items()})
 
     @property
     def capabilities(self) -> tuple[str, ...]:
         return tuple(self.tasks.values())
 
     def task_id_of(self, capability: str) -> str:
-        for tok, name in self.tasks.items():
-            if name == capability:
-                return tok
-        raise KeyError(f"数据索引里没有能力 {capability!r}（可选：{sorted(self.tasks.values())}）")
+        tok = self._task_ids.get(capability)
+        if tok is None:
+            raise KeyError(f"数据索引里没有能力 {capability!r}（可选：{sorted(self.tasks.values())}）")
+        return tok
 
     def to_dict(self) -> dict[str, Any]:
         """**不含 `source`** —— 路径是「从哪读的」，不是「读到了什么」。
