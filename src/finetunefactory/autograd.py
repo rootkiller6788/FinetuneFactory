@@ -878,8 +878,7 @@ def sum_rows(x: Any) -> Tensor:
     tx = _as_tensor(x)
     if not _is2d(tx.data):
         raise ValueError("sum_rows 只支持 2D 输入")
-    d = _cols(tx.data)
-    out = [sum(row[j] for row in tx.data) for j in range(d)]
+    out = [sum(col) for col in zip(*tx.data)]
     _count("sum_rows", tx.numel)
     t = Tensor(out, prev=(tx,))
 
