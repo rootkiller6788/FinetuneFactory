@@ -261,6 +261,7 @@ def forward(weights: Mapping[str, Any], ids: Sequence[int], spec: ModelSpec) -> 
         raise ValueError("forward 收到空序列")
     x = embed(weights[EMB], ids)
     nh, hd = spec.n_heads, spec.head_dim
+    head_sizes = [hd] * nh
     mask = causal_mask(T)
     positions = list(range(T))
     attn_scale = 1.0 / math.sqrt(hd)
@@ -271,9 +272,9 @@ def forward(weights: Mapping[str, Any], ids: Sequence[int], spec: ModelSpec) -> 
         q = matmul(h, weights[p + "q_proj"])
         k = matmul(h, weights[p + "k_proj"])
         v = matmul(h, weights[p + "v_proj"])
-        qh = split_cols(q, [hd] * nh)
-        kh = split_cols(k, [hd] * nh)
-        vh = split_cols(v, [hd] * nh)
+        qh = split_cols(q, head_sizes)
+        kh = split_cols(k, head_sizes)
+        vh = split_cols(v, head_sizes)
         heads = []
         for j in range(nh):
             qj = rope(qh[j], positions)
