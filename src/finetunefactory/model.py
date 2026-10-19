@@ -519,17 +519,15 @@ def quantize_base(
             q = int(round((v - lo) / step))
             codes[start + idx] = 0 if q < 0 else (levels if q > levels else q)
 
-    deq = [0.0] * n
+    sq_err = 0.0
+    sq_ref = 0.0
     for gi, (s, z) in enumerate(zip(scales, zeros)):
         start = gi * group
         for i in range(start, min(start + group, n)):
-            deq[i] = codes[i] * s + z
-
-    sq_err = 0.0
-    sq_ref = 0.0
-    for a, b in zip(flat, deq):
-        sq_err += (a - b) * (a - b)
-        sq_ref += a * a
+            a = flat[i]
+            b = codes[i] * s + z
+            sq_err += (a - b) * (a - b)
+            sq_ref += a * a
     rel = math.sqrt(sq_err / sq_ref) if sq_ref > 0 else 0.0
     return QuantizedBase(
         names=tuple(names),
