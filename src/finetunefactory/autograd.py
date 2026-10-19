@@ -895,9 +895,8 @@ def mean_rows(x: Any) -> Tensor:
     tx = _as_tensor(x)
     if not _is2d(tx.data):
         raise ValueError("mean_rows 只支持 2D 输入")
-    d = _cols(tx.data)
     n = len(tx.data)
-    out = [sum(row[j] for row in tx.data) / n for j in range(d)]
+    out = [s / n for s in map(sum, zip(*tx.data))]
     _count("mean_rows", tx.numel)
     t = Tensor(out, prev=(tx,))
 
