@@ -135,12 +135,13 @@ def _masked_ce(logits: Sequence[Sequence[float]], ex: Example) -> float:
     这种对照就没法做。"""
     tot = 0.0
     denom = 0.0
+    exp, log = math.exp, math.log
     for t in response_positions(ex):
         row = logits[t]
         m = max(row)
-        ex_ = [math.exp(v - m) for v in row]
-        s = sum(ex_)
-        tot += -math.log(max(ex_[ex.targets[t]] / s, 1e-30))
+        # 只保留归一化常数，不必为每个词表项物化一份概率列表。
+        s = sum(exp(v - m) for v in row)
+        tot += -log(max(exp(row[ex.targets[t]] - m) / s, 1e-30))
         denom += 1.0
     return tot / denom if denom > 0 else float("nan")
 
