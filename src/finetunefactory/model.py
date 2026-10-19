@@ -440,11 +440,13 @@ class QuantizedBase:
 
     def dequant_flat(self) -> list[float]:
         out = [0.0] * self.n_params
+        codes = self.codes
+        n, group = self.n_params, self.group
         for gi, (s, z) in enumerate(zip(self.scales, self.zeros)):
-            start = gi * self.group
-            end = min(start + self.group, self.n_params)
+            start = gi * group
+            end = min(start + group, n)
             for i in range(start, end):
-                out[i] = self.codes[i] * s + z
+                out[i] = codes[i] * s + z
         return out
 
     def dequant(self) -> dict[str, list[Any]]:
