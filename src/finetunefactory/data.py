@@ -301,10 +301,10 @@ def _encode_sequence(
         s.append(vocab.id("<u>"))
     s.append(vocab.id(task_id))
     s.append(vocab.id(":"))
-    s.extend(vocab.id(c) for c in payload)
+    s.extend(map(vocab.id, payload))
     s.append(vocab.id("<a>" if template == "chat" else "="))
     start = len(s)
-    s.extend(vocab.id(c) for c in response)
+    s.extend(map(vocab.id, response))
     s.append(vocab.eos)
     return s, start
 
