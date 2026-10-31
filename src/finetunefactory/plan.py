@@ -173,7 +173,8 @@ def adapter_init(a_shape: Sequence[int], b_shape: Sequence[int], seed: int, name
     rnd = random.Random(derive_seed("lora_init", name, seed))
     rank, out_dim = a_shape
     std = 1.0 / math.sqrt(max(1, out_dim))
-    a = [[rnd.gauss(0.0, std) for _ in range(out_dim)] for _ in range(rank)]
+    gauss = rnd.gauss
+    a = [[gauss(0.0, std) for _ in range(out_dim)] for _ in range(rank)]
     in_dim, _ = b_shape
     b = [[0.0] * rank for _ in range(in_dim)]
     return a, b
