@@ -170,9 +170,16 @@ class DataIndex:
     source: str = ""
     #: capability → task_id 的反向索引，构造期建一次（`task_id_of` 在每条样本上都会调）。
     _task_ids: Mapping[str, str] = field(default_factory=dict, repr=False, compare=False)
+    #: 内容的稳定摘要，构造期算一次（缓存键每次都会用）。
+    _digest: str = field(default="", repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "_task_ids", {name: tok for tok, name in self.tasks.items()})
+        object.__setattr__(self, "_digest", sha256_text(canonical_json(self.to_dict())))
+
+    @property
+    def digest(self) -> str:
+        return self._digest
 
     @property
     def capabilities(self) -> tuple[str, ...]:
@@ -411,9 +418,10 @@ def _cache_key(idx: DataIndex, capability: str, template: str, seq_len: int, n: 
 
     `id()` 会在对象被回收后复用，于是「换了索引但缓存里还留着上一个索引的数据」
     这种错误会在某个完全无关的时刻冒出来 —— 而它表现成「数据和索引对不上」，
-    离真正的原因隔着十万八千里。内容摘要没有这个危险，代价是一次 sha256。
+    离真正的原因隔着十万八千里。内容摘要没有这个危险，代价是构造期一次 sha256
+    （摘要缓存在 :class:`DataIndex` 上，之后每次取缓存键都是 O(1)）。
     """
-    return (sha256_text(canonical_json(idx.to_dict())), capability, template, seq_len, n, seed)
+    return (idx.digest, capability, template, seq_len, n, seed)
 
 
 def build_eval_sets(
