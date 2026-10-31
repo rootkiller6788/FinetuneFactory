@@ -367,6 +367,7 @@ def _payloads(n: int, *, seed: int, alphabet: str, length: int, exclude: frozens
     只会让所有 kind 的 gain 一起偏高、把策略之间的差异压扁。
     """
     rng = random.Random(seed)
+    choice = rng.choice
     out: list[str] = []
     seen: set[str] = set()
     space = len(alphabet) ** length
@@ -377,7 +378,7 @@ def _payloads(n: int, *, seed: int, alphabet: str, length: int, exclude: frozens
         guard += 1
         if guard > 100 * (n + 1):
             raise ValueError("拒绝采样没有收敛：样本空间几乎被 exclude 占满")
-        p = "".join(rng.choice(alphabet) for _ in range(length))
+        p = "".join(choice(alphabet) for _ in range(length))
         if p in seen or p in exclude:
             continue
         seen.add(p)
