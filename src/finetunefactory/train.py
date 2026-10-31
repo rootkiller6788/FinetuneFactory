@@ -235,11 +235,14 @@ def _apply(leaf: Tensor, fn: Callable[[float, float, int, int], float]) -> None:
             return
         for i, row in enumerate(d):
             gi = g[i]
-            for j in range(len(row)):
-                row[j] = fn(row[j], gi[j], i, j)
+            for j, p in enumerate(row):
+                row[j] = fn(p, gi[j], i, j)
+    elif g is None:
+        for j, p in enumerate(d):
+            d[j] = fn(p, 0.0, 0, j)
     else:
-        for j in range(len(d)):
-            d[j] = fn(d[j], 0.0 if g is None else g[j], 0, j)
+        for j, p in enumerate(d):
+            d[j] = fn(p, g[j], 0, j)
 
 
 def _numel(data: Any) -> int:
