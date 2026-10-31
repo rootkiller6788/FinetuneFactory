@@ -64,7 +64,12 @@ def token_accuracy(
 
 def _prompt_positions(ex: Example) -> list[int]:
     """prompt 上的监督位置（回答之前的那些）。用于 `prompt_acc`，**不进主指标**。"""
-    return [t for t in range(len(ex.targets)) if ex.mask_all[t] > 0 and t + 1 < ex.response_start]
+    # 只扫到回答起点前一个位置，padding 尾段不用走。
+    return [
+        t
+        for t in range(min(len(ex.targets), ex.response_start - 1))
+        if ex.mask_all[t] > 0
+    ]
 
 
 def evaluate_capability(
