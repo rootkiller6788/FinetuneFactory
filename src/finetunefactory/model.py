@@ -212,10 +212,11 @@ def init_base_weights(spec: ModelSpec, seed: int) -> dict[str, list[Any]]:
         if std == 0.0:
             out[name] = [1.0] * shape[0]
             continue
+        gauss = rng.gauss
         if len(shape) == 1:
-            out[name] = [rng.gauss(0.0, std) for _ in range(shape[0])]
+            out[name] = [gauss(0.0, std) for _ in range(shape[0])]
         else:
-            out[name] = [[rng.gauss(0.0, std) for _ in range(shape[1])] for _ in range(shape[0])]
+            out[name] = [[gauss(0.0, std) for _ in range(shape[1])] for _ in range(shape[0])]
     return out
 
 
