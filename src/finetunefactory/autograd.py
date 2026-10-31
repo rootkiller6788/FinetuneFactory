@@ -869,8 +869,9 @@ def embed(table: Any, ids: Sequence[int]) -> Tensor:
             return
         g = [[0.0] * d for _ in range(n)]
         for row_g, i in zip(t.grad, ids):
+            grow = g[i]
             for j, v in enumerate(row_g):
-                g[i][j] += v
+                grow[j] += v
         _acc(tt, g)
 
     t._backward = _bw
