@@ -461,19 +461,19 @@ def build_train_set(
 ) -> list[Example]:
     """训练集。**只依赖 (capability, template, seq_len, n_train, seed)** ——
     `kind` 不在其中，这正是「同一份数据、四种策略」的形式化版本。"""
-    ev_seed = derive_seed("eval", capability, seed)
-    excluded = frozenset(
-        _payloads(
-            n_eval,
-            seed=ev_seed,
-            alphabet=idx.payload_chars,
-            length=idx.payload_len,
-        )
-        if n_eval
-        else ()
-    )
     key = _cache_key(idx, capability, template, seq_len, n_train, derive_seed("train", seed, n_eval))
     if key not in _CACHE:
+        # 只有未命中缓存时才需要生成排除集；命中时这整段随机采样都是白做的。
+        excluded = frozenset(
+            _payloads(
+                n_eval,
+                seed=derive_seed("eval", capability, seed),
+                alphabet=idx.payload_chars,
+                length=idx.payload_len,
+            )
+            if n_eval
+            else ()
+        )
         _CACHE[key] = build_examples(
             vocab,
             idx,
