@@ -161,11 +161,9 @@ def _flatten(value: Any, out: list[float]) -> None:
     """展平成 float 序列（行主序）。只认到两层 —— 参数一定是 1D 或 2D。"""
     if value and isinstance(value[0], (list, tuple)):
         for row in value:
-            for v in row:
-                out.append(float(v))
+            out.extend(map(float, row))
     else:
-        for v in value:
-            out.append(float(v))
+        out.extend(map(float, value))
 
 
 def _shape_of(value: Any) -> list[int]:
