@@ -479,10 +479,8 @@ def add_bias(x: Any, b: Any) -> Tensor:
         if t.grad is None:
             return
         _acc(tx, t.grad)
-        acc = [0.0] * len(tb.data)
-        for row in t.grad:
-            for j, v in enumerate(row):
-                acc[j] += v
+        # 逐列求和：zip(*...) 在 C 层转置，省掉内层双重下标。
+        acc = [sum(col) for col in zip(*t.grad)]
         _acc(tb, acc)
 
     t._backward = _bw
