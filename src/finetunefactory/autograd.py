@@ -631,17 +631,18 @@ def layernorm(x: Any, w: Any, b: Any, *, eps: float = 1e-5) -> Tensor:
     而两套实现的 backward 是独立的，不能靠「看起来差不多」互证。
     """
     tx, tw, tb = _as_tensor(x), _as_tensor(w), _as_tensor(b)
-    if not _is2d(tx.data):
+    data, weight, bias = tx.data, tw.data, tb.data
+    if not _is2d(data):
         raise ValueError("layernorm 只支持 2D 输入")
-    d = _cols(tx.data)
+    d = _cols(data)
     out: list[list[float]] = []
     stats: list[tuple[float, float]] = []
-    for row in tx.data:
+    for row in data:
         mu = sum(row) / d
         var = sum((v - mu) ** 2 for v in row) / d
         r = 1.0 / math.sqrt(var + eps)
         stats.append((mu, r))
-        out.append([(v - mu) * r * wi + bi for v, wi, bi in zip(row, tw.data, tb.data)])
+        out.append([(v - mu) * r * wi + bi for v, wi, bi in zip(row, weight, bias)])
     _count("layernorm", tx.numel)
     t = Tensor(out, prev=(tx, tw, tb))
 
@@ -651,15 +652,15 @@ def layernorm(x: Any, w: Any, b: Any, *, eps: float = 1e-5) -> Tensor:
         G = t.grad
         gw = [0.0] * d
         gb = [0.0] * d
-        gx = [[0.0] * d for _ in range(len(tx.data))]
-        for i, row in enumerate(tx.data):
+        gx = [[0.0] * d for _ in range(len(data))]
+        for i, row in enumerate(data):
             mu, r = stats[i]
             xh = [(v - mu) * r for v in row]
             # ⚠️ 均值必须对 **g·w** 求，不是对 g 求。
             # `y = xh*w + b`，所以 dL/dxh = g*w；早先的实现漏了那个 w，
             # 于是 layernorm 的解析梯度错了 1.1（数值梯度 1e-10 量级，
             # 而解析给的是另一个数）—— 而它**不报错**，只让训练静默变差。
-            gwh = [G[i][j] * tw.data[j] for j in range(d)]
+            gwh = [G[i][j] * weight[j] for j in range(d)]
             gm = sum(gwh) / d
             gxh = sum(gwh[j] * xh[j] for j in range(d)) / d
             for j in range(d):
