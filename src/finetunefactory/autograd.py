@@ -958,10 +958,11 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
     而「训练慢」在这个项目里是一个合法结论，于是这种 bug 会被当成实验现象。
     """
     tx = _as_tensor(x)
-    if not _is2d(tx.data):
+    data = tx.data
+    if not _is2d(data):
         raise ValueError("rope 只支持 2D 输入（单头：[T, head_dim]）")
-    T = len(tx.data)
-    hd = _cols(tx.data)
+    T = len(data)
+    hd = _cols(data)
     if hd % 2 != 0:
         raise ValueError(f"rope 要求 head_dim 为偶数，得到 {hd}")
     if len(positions) != T:
@@ -981,7 +982,7 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
         table.append(row)
 
     out: list[list[float]] = []
-    for i, row in enumerate(tx.data):
+    for i, row in enumerate(data):
         new_row = [0.0] * hd
         for j in range(half):
             c, s = table[i][j]
