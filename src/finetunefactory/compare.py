@@ -438,10 +438,11 @@ def _probe_ids(spec: Any, n: int, *, seq_len: int, seed: int) -> list[list[int]]
     （写死的序列在改 seq_len 后会越界，而越界会报一个与要查的东西无关的错）。
     """
     vocab = int(spec.vocab)
+    n_tokens = int(seq_len)
     out: list[list[int]] = []
     for k in range(max(1, n)):
         rng = _SplitMix(derive_seed("merge_probe", seed, k))
-        out.append([rng.below(vocab) for _ in range(int(seq_len))])
+        out.append([rng.below(vocab) for _ in range(n_tokens)])
     return out
 
 
