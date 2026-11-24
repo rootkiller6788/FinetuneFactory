@@ -228,13 +228,15 @@ def load_index(path: str | Mapping[str, Any], *, root: str = ".", source: str = 
         raise ValueError(f"数据索引 {src} 缺 tasks")
     # 特殊 token 各自独立成词，**不必**出现在 chars 里 —— 它们是「结构」而不是「内容」。
     tasks: dict[str, str] = {}
+    seen_names: set[str] = set()
     for tok, name in tasks_in.items():
         if tok not in chars:
             raise ValueError(f"任务 token {tok!r} 不在 chars 里，它需要一个 id")
         if name not in TASK_FNS:
             raise ValueError(f"能力 {name!r} 没有实现（可选：{sorted(TASK_FNS)}）")
-        if name in tasks.values():
+        if name in seen_names:
             raise ValueError(f"能力 {name!r} 被声明了两次")
+        seen_names.add(name)
         tasks[str(tok)] = str(name)
     v = Vocab(specials=specials, chars=chars)
     for c in payload_chars:
