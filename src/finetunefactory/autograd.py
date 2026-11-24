@@ -587,18 +587,19 @@ def rmsnorm(x: Any, w: Any, *, eps: float = 1e-6) -> Tensor:
     那种差异会被误读成策略差异。
     """
     tx, tw = _as_tensor(x), _as_tensor(w)
-    if not _is2d(tx.data):
+    data, weight = tx.data, tw.data
+    if not _is2d(data):
         raise ValueError("rmsnorm 只支持 2D 输入")
-    d = _cols(tx.data)
-    if len(tw.data) != d:
+    d = _cols(data)
+    if len(weight) != d:
         raise ValueError(f"rmsnorm 宽度不匹配：{tw.shape} vs {tx.shape}")
     out: list[list[float]] = []
     inv: list[float] = []
-    for row in tx.data:
+    for row in data:
         ms = _dot(row, row) / d
         r = 1.0 / math.sqrt(ms + eps)
         inv.append(r)
-        out.append([v * r * wi for v, wi in zip(row, tw.data)])
+        out.append([v * r * wi for v, wi in zip(row, weight)])
     _count("rmsnorm", tx.numel)
     t = Tensor(out, prev=(tx, tw))
 
@@ -607,18 +608,18 @@ def rmsnorm(x: Any, w: Any, *, eps: float = 1e-6) -> Tensor:
             return
         G = t.grad
         gw = [0.0] * d
-        for i, row in enumerate(tx.data):
+        for i, row in enumerate(data):
             for j, v in enumerate(row):
                 gw[j] += G[i][j] * v * inv[i]
         _acc(tw, gw)
         gx: list[list[float]] = []
-        for i, row in enumerate(tx.data):
+        for i, row in enumerate(data):
             r = inv[i]
             s = 0.0
             for j in range(d):
-                s += G[i][j] * tw.data[j] * row[j]
+                s += G[i][j] * weight[j] * row[j]
             s = s * (r ** 3) / d
-            gx.append([G[i][j] * tw.data[j] * r - row[j] * s for j in range(d)])
+            gx.append([G[i][j] * weight[j] * r - row[j] * s for j in range(d)])
         _acc(tx, gx)
 
     t._backward = _bw
