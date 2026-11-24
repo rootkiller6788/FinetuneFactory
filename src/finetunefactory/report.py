@@ -366,8 +366,9 @@ def cost_rows(result: Any) -> list[tuple[str, ...]]:
     那个错误结论就会自动成立。
     """
     rows: list[tuple[str, ...]] = []
+    costs = (getattr(result, "counters", None) or {}).get("costs") or {}
     for spec_id, _spec in _ordered_specs(result):
-        cost = _cost(result, spec_id)
+        cost = costs.get(spec_id) or {}
         cells = [fmt_bytes(_get(cost, key)) for key, _ in COST_COLUMNS]
         n_train = _get(cost, "n_trainable_params")
         n_base = _get(cost, "n_base_params")
