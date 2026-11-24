@@ -196,10 +196,11 @@ class Lineage:
     # ---- 序列化
 
     def to_dict(self) -> dict[str, Any]:
+        nodes = [n.to_dict() for n in self.nodes()]
         return {
-            "nodes": [n.to_dict() for n in self.nodes()],
+            "nodes": nodes,
             "edges": [e.to_dict() for e in self.edges()],
-            "digest": sha256_text(json.dumps([n.to_dict() for n in self.nodes()], sort_keys=True, ensure_ascii=False)),
+            "digest": sha256_text(json.dumps(nodes, sort_keys=True, ensure_ascii=False)),
         }
 
     @classmethod
