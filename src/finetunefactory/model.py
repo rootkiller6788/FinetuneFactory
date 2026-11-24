@@ -225,6 +225,9 @@ def init_base_weights(spec: ModelSpec, seed: int) -> dict[str, list[Any]]:
 # ----------------------------------------------------------------------
 _MASKS: dict[int, Tensor] = {}
 
+#: 注意力的缩放因子只依赖 head_dim，同一份模型每次前向都相同。
+_ATTN_SCALES: dict[int, float] = {}
+
 #: 掩码用的负无穷替身。取 `-1e9` 而不是 `float("-inf")`：
 #: `-inf` 进 softmax 会得到 `nan - nan`（`-inf - (-inf)`），而 `nan` 会
 #: **绕过所有比较**（skill 坑 9：`abs(x - nan) > tol` 恒为 False）。
@@ -268,7 +271,10 @@ def forward(weights: Mapping[str, Any], ids: Sequence[int], spec: ModelSpec) -> 
     head_sizes = [hd] * nh
     mask = causal_mask(T)
     positions = range(T)
-    attn_scale = 1.0 / math.sqrt(hd)
+    attn_scale = _ATTN_SCALES.get(hd)
+    if attn_scale is None:
+        attn_scale = 1.0 / math.sqrt(hd)
+        _ATTN_SCALES[hd] = attn_scale
 
     for i in range(spec.n_layers):
         p = f"layers.{i}."
