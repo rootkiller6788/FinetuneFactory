@@ -266,6 +266,7 @@ def run_pipeline(
     macs: dict[str, Any] = {}
     checks: dict[str, Any] = {"merge": {}, "gradients": {}, "macs": {}}
     timings: dict[str, float] = {}
+    need_three_way = bool((cfg.get("acceptance") or {}).get("require_cost_three_way_agree", True))
 
     for cell in cells:
         spec = _make_spec(
@@ -286,7 +287,7 @@ def run_pipeline(
             progress(sid, cell["label"], int(cell["index"]), len(cells))
 
         # 结构核对：每个规格都做，因为它是「计划说的是不是真的」的**唯一**依据。
-        if cfg.get("acceptance", {}).get("require_cost_three_way_agree", True):
+        if need_three_way:
             checks["macs"][sid] = compare.check_macs(plan, seq_len=settings.seq_len)
 
         t0 = time.perf_counter()
@@ -310,7 +311,7 @@ def run_pipeline(
             plan, tolerance=tol, seq_len=settings.seq_len, seed=spec.seed
         )
         checks["merge"][sid] = merge
-        if cfg.get("acceptance", {}).get("require_cost_three_way_agree", True):
+        if need_three_way:
             # ② 必须取 **一次单样本前向** 的实测值，也就是 `check_macs` 刚算出来的那个。
             #
             # 这里曾经取的是 `run.macs["total"]` —— 那是**整个训练跑**累加出来的 MAC，
