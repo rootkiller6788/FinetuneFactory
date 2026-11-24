@@ -535,7 +535,8 @@ def _ewise(g: Any, other: Any, op: str) -> Any:
 
 def scale(a: Any, s: float) -> Tensor:
     ta = _as_tensor(a)
-    out = [[v * s for v in row] for row in ta.data] if _is2d(ta.data) else [v * s for v in ta.data]
+    data = ta.data
+    out = [[v * s for v in row] for row in data] if _is2d(data) else [v * s for v in data]
     _count("scale", ta.numel)
     t = Tensor(out, prev=(ta,))
 
