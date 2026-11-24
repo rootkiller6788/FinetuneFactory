@@ -491,14 +491,15 @@ def add_bias(x: Any, b: Any) -> Tensor:
 def mul(a: Any, b: Any) -> Tensor:
     """逐元素相乘（同形，或 1D 沿最后一维广播）。"""
     ta, tb = _as_tensor(a), _as_tensor(b)
+    a_data, b_data = ta.data, tb.data
     if ta.shape == tb.shape:
-        if _is2d(ta.data):
-            out = [[x * y for x, y in zip(r1, r2)] for r1, r2 in zip(ta.data, tb.data)]
+        if _is2d(a_data):
+            out = [[x * y for x, y in zip(r1, r2)] for r1, r2 in zip(a_data, b_data)]
         else:
-            out = [x * y for x, y in zip(ta.data, tb.data)]
+            out = [x * y for x, y in zip(a_data, b_data)]
         bc = False
-    elif _is2d(ta.data) and len(tb.data) == _cols(ta.data):
-        out = [[x * y for x, y in zip(row, tb.data)] for row in ta.data]
+    elif _is2d(a_data) and len(b_data) == _cols(a_data):
+        out = [[x * y for x, y in zip(row, b_data)] for row in a_data]
         bc = True
     else:
         raise ValueError(f"mul 形状不匹配：{ta.shape} vs {tb.shape}")
@@ -509,15 +510,15 @@ def mul(a: Any, b: Any) -> Tensor:
         if t.grad is None:
             return
         if bc:
-            gb = [0.0] * len(tb.data)
+            gb = [0.0] * len(b_data)
             for i, row in enumerate(t.grad):
                 for j, g in enumerate(row):
-                    gb[j] += g * ta.data[i][j]
+                    gb[j] += g * a_data[i][j]
             _acc(tb, gb)
-            _acc(ta, [[g * y for g, y in zip(row, tb.data)] for row in t.grad])
+            _acc(ta, [[g * y for g, y in zip(row, b_data)] for row in t.grad])
         else:
-            _acc(ta, _ewise(t.grad, tb.data, "*"))
-            _acc(tb, _ewise(t.grad, ta.data, "*"))
+            _acc(ta, _ewise(t.grad, b_data, "*"))
+            _acc(tb, _ewise(t.grad, a_data, "*"))
 
     t._backward = _bw
     return t
