@@ -324,13 +324,15 @@ def matrix_rows(result: Any) -> list[tuple[str, ...]]:
     报告不做算术，它只排版已经算好并被核对过的数。
     """
     rows: list[tuple[str, ...]] = []
+    artifacts = getattr(result, "artifacts", None) or {}
+    base_accs = getattr(result, "base_accs", None) or {}
     for spec_id, spec in _ordered_specs(result):
         ev = _eval(result, spec_id)
         run = _run(result, spec_id)
-        art = (getattr(result, "artifacts", None) or {}).get(spec_id)
+        art = artifacts.get(spec_id)
         cost = _cost(result, spec_id)
         cap = spec.dataset.capability
-        base = (getattr(result, "base_accs", None) or {}).get(cap)
+        base = base_accs.get(cap)
         target_acc = ev.target_acc if ev is not None else None
         rows.append((
             _label(result, spec_id),
