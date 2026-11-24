@@ -40,7 +40,7 @@ Train Engine 只认 Builder 的产物。任何「如果是 LoRA 就…」的分�
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any, Mapping, Sequence
 
 from .rng import canonical_json, quantize_for_hash, sha256_text, short_digest
@@ -688,6 +688,8 @@ class TrainingSpec:
     checkpoint: CheckpointSpec = CheckpointSpec()
     evaluation: EvalSpec = EvalSpec()
     seed: int = 0
+    #: 内容摘要构造期算一次 —— `spec_id` 在流水线与报告里被反复读取。
+    _digest: str = field(default="", init=False, repr=False, compare=False)
 
     # ---- 构造期校验
 
@@ -712,6 +714,7 @@ class TrainingSpec:
             self.scheduler.total_steps >= 1,
             "scheduler.total_steps 必须 >= 1（0 步的训练不是一个实验）",
         )
+        object.__setattr__(self, "_digest", sha256_text(canonical_json(self.fingerprint_payload())))
 
     # ---- 归一化
 
@@ -750,7 +753,7 @@ class TrainingSpec:
 
     def digest(self) -> str:
         """全长内容摘要。**比较一律用它，展示才用 `spec_id`。**"""
-        return sha256_text(canonical_json(self.fingerprint_payload()))
+        return self._digest
 
     @property
     def spec_id(self) -> str:
@@ -759,7 +762,7 @@ class TrainingSpec:
         带上 `objective` 与 `kind` 是**为了可读**（`sft-lora-a1b2c3d4e5f6`
         比 `a1b2c3d4e5f6` 好认），而唯一性仍然完全由摘要保证。
         """
-        return f"{self.objective}-{self.finetuning.kind}-{short_digest(self.digest(), 12)}"
+        return f"{self.objective}-{self.finetuning.kind}-{short_digest(self._digest, 12)}"
 
     # ---- 「切换 finetuning 字段」这个操作本身
 
