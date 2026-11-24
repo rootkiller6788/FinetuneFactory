@@ -467,11 +467,12 @@ def add_bias(x: Any, b: Any) -> Tensor:
     偏置要么全训要么全冻。漏掉它，参数量与显存都会对不上。
     """
     tx, tb = _as_tensor(x), _as_tensor(b)
+    bias = tb.data
     if not _is2d(tx.data):
         raise ValueError("add_bias 只支持 2D 输入")
-    if len(tb.data) != _cols(tx.data):
+    if len(bias) != _cols(tx.data):
         raise ValueError(f"add_bias 宽度不匹配：{tb.shape} vs {tx.shape}")
-    out = [[v + bv for v, bv in zip(row, tb.data)] for row in tx.data]
+    out = [[v + bv for v, bv in zip(row, bias)] for row in tx.data]
     _count("add_bias", tx.numel)
     t = Tensor(out, prev=(tx, tb))
 
