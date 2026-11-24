@@ -460,10 +460,11 @@ def cell_label(cell: Mapping[str, Any]) -> str:
 
 def protocol_digest(cfg: Mapping[str, Any]) -> str:
     """口径摘要：只吃影响**数字口径**的配置（显存估算与容差），不吃网格。"""
+    acceptance = cfg.get("acceptance") or {}
     keep = {
         "cost": cfg.get("cost"),
         "acceptance": {
-            "merge_tolerance": (cfg.get("acceptance") or {}).get("merge_tolerance"),
+            "merge_tolerance": acceptance.get("merge_tolerance"),
         },
         "report": cfg.get("report"),
     }
