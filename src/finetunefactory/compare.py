@@ -227,11 +227,14 @@ def frontier_keys(
     axes = objectives(axes)
     out: dict[str, list[str]] = {}
     for name, direction in axes:
-        vals = [
-            (sid, float(points[sid][name]))
-            for sid in front
-            if name in points[sid] and not math.isnan(float(points[sid][name]))
-        ]
+        vals: list[tuple[str, float]] = []
+        for sid in front:
+            p = points[sid]
+            if name not in p:
+                continue
+            v = float(p[name])
+            if not math.isnan(v):
+                vals.append((sid, v))
         if not vals:
             out[name] = []
             continue
