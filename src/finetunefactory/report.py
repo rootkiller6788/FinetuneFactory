@@ -326,6 +326,7 @@ def matrix_rows(result: Any) -> list[tuple[str, ...]]:
     rows: list[tuple[str, ...]] = []
     artifacts = getattr(result, "artifacts", None) or {}
     base_accs = getattr(result, "base_accs", None) or {}
+    frontier_ids = {s.spec_id for s in (getattr(result, "frontier", None) or [])}
     for spec_id, spec in _ordered_specs(result):
         ev = _eval(result, spec_id)
         run = _run(result, spec_id)
@@ -346,7 +347,7 @@ def matrix_rows(result: Any) -> list[tuple[str, ...]]:
             fmt_bytes(art.payload_bytes) if art is not None else NA,
             fmt_bytes(_get(cost, "vram_bytes")),
             fmt_int(run.train_flops if run is not None else None),
-            "★" if result.is_frontier(spec_id) else "",
+            "★" if spec_id in frontier_ids else "",
         ))
     return rows
 
