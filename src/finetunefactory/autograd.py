@@ -384,7 +384,8 @@ def split_cols(x: Any, sizes: Sequence[int]) -> tuple[Tensor, ...]:
     这就是 `compare.check_gradients` 存在的理由。
     """
     tx = _as_tensor(x)
-    width = _cols(tx.data)
+    data = tx.data
+    width = _cols(data)
     if sum(sizes) != width:
         raise ValueError(f"split_cols 宽度对不上：{width} vs sum({list(sizes)})")
     parts: list[list[Any]] = []
@@ -392,7 +393,7 @@ def split_cols(x: Any, sizes: Sequence[int]) -> tuple[Tensor, ...]:
     off = 0
     for s in sizes:
         offsets.append(off)
-        parts.append([row[off : off + s] for row in tx.data])
+        parts.append([row[off : off + s] for row in data])
         off += s
     outs = tuple(Tensor(p, prev=(tx,)) for p in parts)
 
@@ -403,7 +404,7 @@ def split_cols(x: Any, sizes: Sequence[int]) -> tuple[Tensor, ...]:
             # 只填自己那一段，其余补 0：这样 N 个输出各累加一次，合起来正好是一次拼接。
             # 补 0 而不是「只写自己那一段的窄表」，是因为 `_acc` 是按位置累加的，
             # 而 `tx.grad` 必须始终是全宽 —— 直接交一张半宽的表会静默改动全宽的定义。
-            rows = len(tx.data)
+            rows = len(data)
             merged = [[0.0] * width for _ in range(rows)]
             for i in range(rows):
                 for j in range(s):
