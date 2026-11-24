@@ -34,6 +34,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -210,8 +211,6 @@ def load_index(path: str | Mapping[str, Any], *, root: str = ".", source: str = 
         src = source
     else:
         p = resolve_path(root, path)
-        import json
-
         raw = json.loads(p.read_text(encoding="utf-8"))
         src = str(p)
     specials = tuple(raw.get("specials") or DEFAULT_SPECIALS)
