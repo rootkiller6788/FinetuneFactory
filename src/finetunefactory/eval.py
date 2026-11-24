@@ -97,6 +97,8 @@ def evaluate_capability(
     n_prompt_tot = 0
     losses: list[float] = []
     step = max(1, int(batch_size))
+    model_spec = spec.model
+    fwd = forward
     for start in range(0, len(examples), step):
         # `build()` 提到内层循环**外面**。它在评测期间是常量（没有优化器在动叶子），
         # 而 LoRA 的 `build()` 每个挂载点都要造一张 2D 中间张量 —— 在 96 次前向里
@@ -104,7 +106,7 @@ def evaluate_capability(
         # 这件事写进了控制流，读的人不必再去确认叶子有没有被改。
         weights = plan.build()
         for ex in examples[start : start + step]:
-            logits = forward(weights, ex.ids, spec.model).data
+            logits = fwd(weights, ex.ids, model_spec).data
             pos = content_positions(ex)
             ok, tot = token_accuracy(logits, ex, positions=pos)
             n_ok += ok
