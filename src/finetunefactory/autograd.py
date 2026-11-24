@@ -854,13 +854,14 @@ def batch_cross_entropy(
 def embed(table: Any, ids: Sequence[int]) -> Tensor:
     """按行取嵌入。反向是「把梯度散加回去」—— **同一个 id 出现两次必须加两次**。"""
     tt = _as_tensor(table)
-    if not _is2d(tt.data):
+    data = tt.data
+    if not _is2d(data):
         raise ValueError("embed 只支持 2D 表")
-    n, d = len(tt.data), len(tt.data[0])
+    n, d = len(data), len(data[0])
     for i in ids:
         if not (0 <= i < n):
             raise IndexError(f"embed 下标越界：{i} 不在 [0, {n})")
-    out = [list(tt.data[i]) for i in ids]
+    out = [list(data[i]) for i in ids]
     _count("embed", len(ids) * d)
     t = Tensor(out, prev=(tt,))
 
