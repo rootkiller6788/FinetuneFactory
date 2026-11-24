@@ -551,6 +551,7 @@ def scale(a: Any, s: float) -> Tensor:
 
 def silu(a: Any) -> Tensor:
     ta = _as_tensor(a)
+    data = ta.data
     exp = math.exp
 
     def f(v: float) -> float:
@@ -562,17 +563,17 @@ def silu(a: Any) -> Tensor:
         s = 1.0 / (1.0 + exp(-v))
         return s * (1.0 + v * (1.0 - s))
 
-    out = [[f(v) for v in row] for row in ta.data] if _is2d(ta.data) else [f(v) for v in ta.data]
+    out = [[f(v) for v in row] for row in data] if _is2d(data) else [f(v) for v in data]
     _count("silu", ta.numel)
     t = Tensor(out, prev=(ta,))
 
     def _bw() -> None:
         if t.grad is None:
             return
-        if _is2d(ta.data):
-            _acc(ta, [[g * df(v) for g, v in zip(gr, vr)] for gr, vr in zip(t.grad, ta.data)])
+        if _is2d(data):
+            _acc(ta, [[g * df(v) for g, v in zip(gr, vr)] for gr, vr in zip(t.grad, data)])
         else:
-            _acc(ta, [g * df(v) for g, v in zip(t.grad, ta.data)])
+            _acc(ta, [g * df(v) for g, v in zip(t.grad, data)])
 
     t._backward = _bw
     return t
