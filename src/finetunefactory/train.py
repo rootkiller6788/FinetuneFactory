@@ -341,11 +341,12 @@ def batch_order(n: int, batch: int, *, seed: int, steps: int) -> list[list[int]]
     """
     out: list[list[int]] = []
     epoch = 0
+    starts = range(0, n - batch + 1, batch)
     while len(out) < steps:
         rng = random.Random(derive_seed("batch", seed, epoch))
         order = list(range(n))
         rng.shuffle(order)
-        for start in range(0, n - batch + 1, batch):
+        for start in starts:
             if len(out) >= steps:
                 break
             out.append(order[start : start + batch])
