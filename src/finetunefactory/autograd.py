@@ -421,9 +421,10 @@ def split_cols(x: Any, sizes: Sequence[int]) -> tuple[Tensor, ...]:
 
 def concat_cols(parts: Sequence[Any]) -> Tensor:
     ts = tuple(_as_tensor(p) for p in parts)
-    rows = len(ts[0].data)
-    sizes = [len(t.data[0]) for t in ts]
-    out = [[v for t in ts for v in t.data[i]] for i in range(rows)]
+    datas = [t.data for t in ts]
+    rows = len(datas[0])
+    sizes = [len(d[0]) for d in datas]
+    out = [[v for d in datas for v in d[i]] for i in range(rows)]
     t = Tensor(out, prev=ts)
 
     def _bw() -> None:
