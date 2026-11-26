@@ -187,12 +187,13 @@ class EvalResult:
         缺测的能力必须**跳过**而不是当 0 —— 把「不适用」当 0 算进均值，
         是这个工作区里出现次数最多的静默偏差（skill 坑 10）。
         """
-        drops = [
-            base[c] - self.per_capability[c]
-            for c in self.per_capability
-            if c != self.capability and c in base
-        ]
-        return sum(drops) / len(drops) if drops else 0.0
+        total = 0.0
+        n = 0
+        for c, v in self.per_capability.items():
+            if c != self.capability and c in base:
+                total += base[c] - v
+                n += 1
+        return total / n if n else 0.0
 
     def gain(self, base: Mapping[str, float]) -> float:
         if self.capability not in base:
