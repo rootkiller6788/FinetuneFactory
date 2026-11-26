@@ -445,10 +445,11 @@ def add(a: Any, b: Any) -> Tensor:
     ta, tb = _as_tensor(a), _as_tensor(b)
     if ta.shape != tb.shape:
         raise ValueError(f"add 形状不匹配：{ta.shape} vs {tb.shape}")
-    if _is2d(ta.data):
-        out = [[x + y for x, y in zip(r1, r2)] for r1, r2 in zip(ta.data, tb.data)]
+    a_data, b_data = ta.data, tb.data
+    if _is2d(a_data):
+        out = [[x + y for x, y in zip(r1, r2)] for r1, r2 in zip(a_data, b_data)]
     else:
-        out = [x + y for x, y in zip(ta.data, tb.data)]
+        out = [x + y for x, y in zip(a_data, b_data)]
     _count("add", ta.numel)
     t = Tensor(out, prev=(ta, tb))
 
