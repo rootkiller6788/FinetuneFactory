@@ -219,14 +219,16 @@ class Tensor:
     def backward(self, seed: Any | None = None) -> None:
         topo: list[Tensor] = []
         seen: set[int] = set()
+        topo_append = topo.append
+        seen_add = seen.add
 
         def build(t: Tensor) -> None:
             if id(t) in seen:
                 return
-            seen.add(id(t))
+            seen_add(id(t))
             for p in t._prev:
                 build(p)
-            topo.append(t)
+            topo_append(t)
 
         build(self)
         if seed is None:
