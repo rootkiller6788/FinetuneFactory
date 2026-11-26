@@ -212,6 +212,7 @@ class SGD(_Optimizer):
 
     def step(self, lr: float) -> None:
         self.n_steps += 1
+        momentum = self.momentum
         for idx, (_name, leaf) in enumerate(self.leaves):
             if leaf.grad is None:
                 continue
@@ -220,7 +221,7 @@ class SGD(_Optimizer):
 
             def upd(p: float, gi: float, i: int, j: int) -> float:
                 key = (i, j)
-                b = self.momentum * buf[key] + gi
+                b = momentum * buf[key] + gi
                 buf[key] = b
                 return p - lr * (b + wd * p if wd else b)
 
