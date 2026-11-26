@@ -354,7 +354,8 @@ def matmul(a: Any, b: Any) -> Tensor:
 
 def transpose(a: Any) -> Tensor:
     ta = _as_tensor(a)
-    out = [list(col) for col in zip(*ta.data)]
+    data = ta.data
+    out = [list(col) for col in zip(*data)]
     t = Tensor(out, prev=(ta,))
 
     def _bw() -> None:
