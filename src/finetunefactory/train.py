@@ -159,8 +159,13 @@ class AdamW(_Optimizer):
     def step(self, lr: float) -> None:
         self.n_steps += 1
         t_ = self.n_steps
-        bc1 = 1.0 - self.b1**t_
-        bc2 = 1.0 - self.b2**t_
+        b1, b2 = self.b1, self.b2
+        one_minus_b1 = 1.0 - b1
+        one_minus_b2 = 1.0 - b2
+        bc1 = 1.0 - b1**t_
+        bc2 = 1.0 - b2**t_
+        sqrt = math.sqrt
+        eps = self.eps
         for idx, (_name, leaf) in enumerate(self.leaves):
             if leaf.grad is None:
                 continue
@@ -172,14 +177,14 @@ class AdamW(_Optimizer):
                 key = (i, j)
                 mi = m[key]
                 vi = v[key]
-                mi = self.b1 * mi + (1.0 - self.b1) * gi
-                vi = self.b2 * vi + (1.0 - self.b2) * gi * gi
+                mi = b1 * mi + one_minus_b1 * gi
+                vi = b2 * vi + one_minus_b2 * gi * gi
                 m[key] = mi
                 v[key] = vi
                 mh = mi / bc1
                 vh = vi / bc2
                 p2 = p - lr * wd * p if wd else p
-                return p2 - lr * mh / (math.sqrt(vh) + self.eps)
+                return p2 - lr * mh / (sqrt(vh) + eps)
 
             _apply(leaf, upd)
 
