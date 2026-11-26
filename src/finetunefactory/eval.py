@@ -99,6 +99,10 @@ def evaluate_capability(
     step = max(1, int(batch_size))
     model_spec = spec.model
     fwd = forward
+    content_pos = content_positions
+    prompt_pos = _prompt_positions
+    score = token_accuracy
+    masked_ce = _masked_ce
     for start in range(0, len(examples), step):
         # `build()` 提到内层循环**外面**。它在评测期间是常量（没有优化器在动叶子），
         # 而 LoRA 的 `build()` 每个挂载点都要造一张 2D 中间张量 —— 在 96 次前向里
@@ -107,21 +111,21 @@ def evaluate_capability(
         weights = plan.build()
         for ex in examples[start : start + step]:
             logits = fwd(weights, ex.ids, model_spec).data
-            pos = content_positions(ex)
-            ok, tot = token_accuracy(logits, ex, positions=pos)
+            pos = content_pos(ex)
+            ok, tot = score(logits, ex, positions=pos)
             n_ok += ok
             n_tot += tot
             if tot and ok == tot:
                 n_exact += 1
             if ex.eos_t >= 0:
-                ok_e, _ = token_accuracy(logits, ex, positions=[ex.eos_t])
+                ok_e, _ = score(logits, ex, positions=[ex.eos_t])
                 n_eos += ok_e
-            pp = _prompt_positions(ex)
+            pp = prompt_pos(ex)
             if pp:
-                ok_p, _ = token_accuracy(logits, ex, positions=pp)
+                ok_p, _ = score(logits, ex, positions=pp)
                 n_prompt_ok += ok_p
                 n_prompt_tot += len(pp)
-            losses.append(_masked_ce(logits, ex))
+            losses.append(masked_ce(logits, ex))
     detail = {
         "n_eval": len(examples),
         "n_positions": n_tot,
