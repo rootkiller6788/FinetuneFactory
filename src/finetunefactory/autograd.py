@@ -670,13 +670,15 @@ def layernorm(x: Any, w: Any, b: Any, *, eps: float = 1e-5) -> Tensor:
             # `y = xh*w + b`，所以 dL/dxh = g*w；早先的实现漏了那个 w，
             # 于是 layernorm 的解析梯度错了 1.1（数值梯度 1e-10 量级，
             # 而解析给的是另一个数）—— 而它**不报错**，只让训练静默变差。
-            gwh = [G[i][j] * weight[j] for j in range(d)]
+            g_row = G[i]
+            gx_row = gx[i]
+            gwh = [g * w for g, w in zip(g_row, weight)]
             gm = sum(gwh) / d
             gxh = sum(gwh[j] * xh[j] for j in range(d)) / d
-            for j in range(d):
-                gw[j] += G[i][j] * xh[j]
-                gb[j] += G[i][j]
-                gx[i][j] = r * (gwh[j] - gm - xh[j] * gxh)
+            for j, x in enumerate(xh):
+                gw[j] += g_row[j] * x
+                gb[j] += g_row[j]
+                gx_row[j] = r * (gwh[j] - gm - x * gxh)
         _acc(tw, gw)
         _acc(tb, gb)
         _acc(tx, gx)
