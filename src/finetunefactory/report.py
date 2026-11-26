@@ -326,10 +326,12 @@ def matrix_rows(result: Any) -> list[tuple[str, ...]]:
     rows: list[tuple[str, ...]] = []
     artifacts = getattr(result, "artifacts", None) or {}
     base_accs = getattr(result, "base_accs", None) or {}
+    evals = getattr(result, "evals", None) or {}
+    runs = getattr(result, "runs", None) or {}
     frontier_ids = {s.spec_id for s in (getattr(result, "frontier", None) or [])}
     for spec_id, spec in _ordered_specs(result):
-        ev = _eval(result, spec_id)
-        run = _run(result, spec_id)
+        ev = evals.get(spec_id)
+        run = runs.get(spec_id)
         art = artifacts.get(spec_id)
         cost = _cost(result, spec_id)
         cap = spec.dataset.capability
