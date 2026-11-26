@@ -617,8 +617,10 @@ def rmsnorm(x: Any, w: Any, *, eps: float = 1e-6) -> Tensor:
         G = t.grad
         gw = [0.0] * d
         for i, row in enumerate(data):
+            g_row = G[i]
+            r = inv[i]
             for j, v in enumerate(row):
-                gw[j] += G[i][j] * v * inv[i]
+                gw[j] += g_row[j] * v * r
         _acc(tw, gw)
         gx: list[list[float]] = []
         for i, row in enumerate(data):
