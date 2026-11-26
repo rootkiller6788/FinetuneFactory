@@ -275,9 +275,9 @@ def _acc(t: Tensor, g: Any) -> None:
     if t.grad is None:
         t.grad = _copy_grad(g)
     elif _is2d(g):
-        for i, row in enumerate(g):
-            for j, v in enumerate(row):
-                t.grad[i][j] += v
+        for row_g, row_t in zip(g, t.grad):
+            for j, v in enumerate(row_g):
+                row_t[j] += v
     elif isinstance(g, list):
         for i, v in enumerate(g):
             t.grad[i] += v
