@@ -565,13 +565,14 @@ def fit_majority(
     基线是「一个不看输入的策略能拿多少分」的度量，它的参数只能来自训练集。
     """
     out: dict[str, list[int]] = {}
+    positions_of = content_positions
     for cap, examples in train_sets.items():
         examples = list(examples)
         if not examples:
             continue
         counts: list[dict[int, int]] = [{} for _ in range(len(examples[0].targets))]
         for ex in examples:
-            for t in content_positions(ex):
+            for t in positions_of(ex):
                 d = counts[t]
                 d[ex.targets[t]] = d.get(ex.targets[t], 0) + 1
         out[cap] = [(_argmax(c) if c else -1) for c in counts]
