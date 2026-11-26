@@ -319,6 +319,7 @@ def sweep_cells(cfg: Mapping[str, Any]) -> list[dict[str, Any]]:
     cells_in = list(sweep.get("cells") or [])
 
     units: list[dict[str, Any]] = []
+    allowed_cell_keys = {"kind", "rank", "targets", "objective", "bits", "group", "note"}
     if cells_in:
         for i, cell in enumerate(cells_in):
             if not isinstance(cell, Mapping):
@@ -326,11 +327,10 @@ def sweep_cells(cfg: Mapping[str, Any]) -> list[dict[str, Any]]:
             kind = cell.get("kind")
             if kind not in STRATEGY_KINDS:
                 raise ValueError(f"sweep.cells[{i}].kind 应是 {list(STRATEGY_KINDS)} 之一，得到 {kind!r}")
-            _allowed = {"kind", "rank", "targets", "objective", "bits", "group", "note"}
-            _extra = sorted(set(cell) - _allowed)
+            _extra = sorted(set(cell) - allowed_cell_keys)
             if _extra:
                 raise ValueError(
-                    f"sweep.cells[{i}] 有不认识的键 {_extra}（认识：{sorted(_allowed)}）。"
+                    f"sweep.cells[{i}] 有不认识的键 {_extra}（认识：{sorted(allowed_cell_keys)}）。"
                     "一个被静默忽略的键会让这一格跑成**别的配置**，而标签上写的还是你以为的那个。"
                 )
             rank = int(cell.get("rank") or 0)
