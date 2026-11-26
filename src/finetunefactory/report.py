@@ -607,6 +607,7 @@ def explain(result: Any, spec_id: str, *, max_capabilities: int = 12) -> str:
 
     out: list[str] = []
     ft = spec.finetuning
+    model = spec.model
     out.append(f"# {_label(result, spec_id)}")
     out.append("")
     out.append(f"`{spec_id}`")
@@ -616,8 +617,8 @@ def explain(result: Any, spec_id: str, *, max_capabilities: int = 12) -> str:
     out.append("## 一、这份 Spec 配了什么")
     out.append("")
     rows: list[tuple[str, ...]] = [
-        ("模型", spec.model.name, f"d_model={spec.model.d_model} n_layers={spec.model.n_layers} "
-                                  f"n_heads={spec.model.n_heads} d_ff={spec.model.d_ff}"),
+        ("模型", model.name, f"d_model={model.d_model} n_layers={model.n_layers} "
+                             f"n_heads={model.n_heads} d_ff={model.d_ff}"),
         ("数据集能力", spec.dataset.capability, ""),
         ("模板", spec.dataset.template, ""),
         ("序列长度", fmt_int(spec.dataset.seq_len), f"n_train={fmt_int(spec.dataset.n_train)} "
