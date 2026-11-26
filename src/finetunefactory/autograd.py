@@ -989,9 +989,10 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
 
     out: list[list[float]] = []
     for i, row in enumerate(data):
+        angles = table[i]
         new_row = [0.0] * hd
         for j in range(half):
-            c, s = table[i][j]
+            c, s = angles[j]
             a, b = row[2 * j], row[2 * j + 1]
             new_row[2 * j] = a * c - b * s
             new_row[2 * j + 1] = a * s + b * c
@@ -1005,9 +1006,10 @@ def rope(x: Any, positions: Sequence[int], *, base: float = ROPE_BASE) -> Tensor
         G = t.grad
         gx: list[list[float]] = []
         for i, grow in enumerate(G):
+            angles = table[i]
             new_row = [0.0] * hd
             for j in range(half):
-                c, s = table[i][j]
+                c, s = angles[j]
                 ga, gb = grow[2 * j], grow[2 * j + 1]
                 # R(-θ) 作用在梯度上（= R(θ)ᵀ）
                 new_row[2 * j] = ga * c + gb * s
